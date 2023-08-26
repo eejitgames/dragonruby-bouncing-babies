@@ -48,7 +48,7 @@ class Game
     audio[:game_music] = {
       input: 'sounds/game_music.ogg',  # Filename
       x: 0.0, y: 0.0, z: 0.0,          # Relative position to the listener, x, y, z from -1.0 to 1.0
-      gain: 0.07,                      # Volume (0.0 to 1.0)
+      gain: 0.06,                      # Volume (0.0 to 1.0)
       pitch: 1.0,                      # Pitch of the sound (1.0 = original pitch)
       paused: true,                    # Set to true to pause the sound at the current playback position
       looping: true,                   # Set to true to loop the sound/music until you stop it
@@ -60,8 +60,12 @@ class Game
     # state.block = "110000000000001111111110000000000011111000000000000000000".to_i(2)
     # state.block = "110000000000001111111111111111111111111111111111111111111".to_i(2)
     state.masks = [
-      "111100000000001111111110000000000011111000000000000000000".to_i(2)
+    # "110000000000001111111110000000000011111000000000000000000".to_i(2)
+      "111111100000001111111110000000000111111100000000000000011".to_i(2)
     ]
+    # this pattern is pretty good for staggered jumps, looks not more than two clumped together
+    # results in a lot of 1 - 3 - 1 - 3 extreme left and right manoeuvres
+    # "111111100000001111111110000000000111111100000000000000011".to_i(2)
     state.wave = 1
     state.lives = 5
     state.game_over = false
@@ -262,6 +266,19 @@ class Game
       elsif inputs.keyboard.key_down.three
         state.paramedics = STRETCHER_RIGHT
         state.visited_right = true
+      end
+
+      if inputs.keyboard.key_down.forward_slash
+        @show_fps = !@show_fps
+      end
+      if @show_fps
+        state.all_primitives.append({ x: 1278, y: 660, text: "#{gtk.current_framerate.to_sf}", size_enum: 3, alignment_enum: 2,
+        r: 255, g: 255, b: 255, font: "fonts/IBM_EGA_8x8.ttf"}.label!)
+        # args.outputs.primitives << args.gtk.current_framerate_primitives
+        # hacky if fps is on, do auto paramedics
+        state.paramedics = STRETCHER_LEFT if state.first_bounce == true
+        state.paramedics = STRETCHER_MIDDLE if state.second_bounce == true
+        state.paramedics = STRETCHER_RIGHT if state.third_bounce == true
       end
     end
 
