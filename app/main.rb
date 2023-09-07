@@ -1,6 +1,3 @@
-$gtk.reset
-$game = nil
-
 # warning, game jam hacked together code follows
 # constants, many with specific bits set, including for demo mode
 ADD_FIRST_BABY = 0
@@ -61,11 +58,19 @@ class Game
     # state.block = "110000000000001111111111111111111111111111111111111111111".to_i(2)
     state.masks = [
     # "110000000000001111111110000000000011111000000000000000000".to_i(2)
-      "111111100000001111111110000000000111111100000000000000011".to_i(2)
+      "110000011111111111111111111111111111111111111111111111111".to_i(2)
     ]
     # this pattern is pretty good for staggered jumps, looks not more than two clumped together
     # results in a lot of 1 - 3 - 1 - 3 extreme left and right manoeuvres
     # "111111100000001111111110000000000111111100000000000000011".to_i(2)
+    # up to 3 in a row
+    # "111110000000001111111111111111111111111111111111111111111".to_i(2)
+    # up to 3 in a row - closer together
+    # "110000011111111111111111111111111111111111111111111111111".to_i(2)
+    # up to 4 in a row
+    # "111000000000001111111111111111111111111111111111111111111".to_i(2)
+    # up to 5 in a row
+    # "110000000000001111111111111111111111111111111111111111111".to_i(2)
     state.wave = 1
     state.lives = 5
     state.game_over = false
@@ -86,6 +91,7 @@ class Game
     state.current_scene = :title_scene
     state.babies_spawned = 0
     state.baby_in_air_max = 1
+    state.baby_pattern = 0
     state.paramedics = STRETCHER_LEFT
     # bouncing_babies is a number, with some amount of bits set. Each bit represents a baby in that 'slot'.
     # bouncing_babies is 'shifted' right to move the babies along from left to right.
@@ -152,11 +158,11 @@ class Game
     when ADD_THIRD_BABY
       state.bouncing_babies = state.bouncing_babies | (1<<57) # put a baby just left of the window
     when MOVE_STRETCHER_LEFT
-      state.paramedics = 130
+      state.paramedics = STRETCHER_LEFT
     when MOVE_STRETCHER_MIDDLE
-      state.paramedics = 515
+      state.paramedics = STRETCHER_MIDDLE
     when MOVE_STRETCHER_RIGHT
-      state.paramedics = 840
+      state.paramedics = STRETCHER_RIGHT
     end
    
     if state.bouncing_babies > 0 # if there is at least one bouncing baby
@@ -213,7 +219,7 @@ class Game
     # time for some action - if any of these bits are set, do not jump
     if state.babies_spawned < (state.wave * 2) # the total amount that can spawn is capped per wave
       if state.bouncing_babies.to_s(2).count("1") < state.baby_in_air_max # max in the air at once
-        if (state.bouncing_babies & state.masks[0]) == 0
+        if (state.bouncing_babies & state.masks[state.baby_pattern]) == 0
           # if there is not already one in the window, put one there
           if ((state.bouncing_babies >> 57) & 1) == 0
             state.bouncing_babies = state.bouncing_babies | (1<<57)
@@ -419,12 +425,12 @@ class Game
   end
 
   def draw_wave
-    state.all_primitives.append({ x: 825, y: 710, text: state.wave, size_enum: 3, alignment_enum: 1,
+    state.all_primitives.append({ x: 842, y: 710, text: state.wave, size_enum: 3, alignment_enum: 1,
       r: 255, g: 255, b: 255, font: "fonts/IBM_EGA_8x8.ttf"}.label!)
   end
 
   def draw_score_and_lives
-    state.all_primitives.append({ x: 1278, y: 710, text: state.score, size_enum: 3, alignment_enum: 2,
+    state.all_primitives.append({ x: 1192, y: 710, text: state.score, size_enum: 3, alignment_enum: 1,
       r: 255, g: 255, b: 255, font: "fonts/IBM_EGA_8x8.ttf"}.label!)
 
     (1..state.lives).each do |x_coor| # draw a baby for each life the player has
@@ -453,7 +459,7 @@ class Game
         state.babies_spawned = 0
         state.wave_over = false
         state.baby_in_air_max += 1 if state.baby_in_air_max < 5 # increase the cap by 1, to a max of 5
-        state.wave += 1 # advance to the next wave
+        state.wave += 1 if state.wave < 99999 # advance to the next wave
         if state.wave % 3 == 0
           state.game_delay -= 1 if state.game_delay > 5
         end
@@ -486,3 +492,10 @@ def tick args
   $game.args = args
   $game.tick
 end
+
+# DR will call this method (in addition do doing what it already does) if $gtk.reset is called
+def reset
+  $game = nil
+end
+
+$gtk.reset
