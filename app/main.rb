@@ -53,15 +53,16 @@ class Game
     outputs.background_color = [ 0, 0, 0 ]
     # Need to decide a strategy here to use different bitmasks as the game advances
     state.masks = [
-      # easy, bouncing pairs
+      "111111111111111111111111111110111111111101111111111111111".to_i(2),
+      "111111111111111111111111111110111111111101111111111111111".to_i(2),
+      "111111111101111111111111111110111111111101111111111111111".to_i(2),
       "111000111111111111111110000000000011111000000000000000000".to_i(2),
-      # up to 3 in a row - closer together
-      "110000011111111111111111111111111111111111111111111111111".to_i(2),
-      # up to 4 in a row
-      "111000000000001111111111111111111111111111111111111111111".to_i(2),
-      # up to 5 in a row
       "110000000000001111111111111111111111111111111111111111111".to_i(2)
     ]
+    # only 2 in the air, easy
+    # "111111111111111111111111111110111111111101111111111111111".to_i(2)
+    # only three in the air, spaced out, easy
+    # "111111111101111111111111111110111111111101111111111111111".to_i(2)
     # pro pattern
     # "111100000000001111111100000000000001110000000000000000001".to_i(2) 
     # easy, bouncing pairs
@@ -255,6 +256,7 @@ class Game
             if state.babies_spawned >= 10.lesser(state.wave * 2) # [10, (state.wave * 2)].min # b > 10 ? 10 : b
               state.wave_over = true
             end
+            # putz "#{state.bouncing_babies.to_s(2)}"
           end
         end
       end
@@ -488,8 +490,10 @@ class Game
         state.wave_over = false
         state.baby_in_air_max += 1 if state.baby_in_air_max < 5 # increase the cap by 1, to a max of 5
         if state.wave == 5
+          # update this area .. at some stage remove the 'starter' patterns from the mix
           # state.masks.delete_at(1)
           state.masks = state.masks - ["110000011111111111111111111111111111111111111111111111111".to_i(2)]
+          state.masks = state.masks - ["111111111101111111111111111111101111111110111111111111111".to_i(2)]
         end
         state.wave += 1 if state.wave < 99999 # advance to the next wave
         if state.baby_pattern < ( state.masks.length - 1 )
@@ -505,7 +509,7 @@ class Game
     # outputs.labels << { x: 130, y: 30.from_top, text: "#{state.babies_spawned}", r: 255, g: 255, b: 255 }
     # outputs.labels << { x: 130, y: 50.from_top, text: "#{state.wave_over}", r: 255, g: 255, b: 255 }
     # outputs.labels << { x: 130, y: 70.from_top, text: "#{gtk.current_framerate.to_sf}", r: 255, g: 255, b: 255 }
-    outputs.labels << { x: 130, y: 30.from_top, text: "#{state.baby_pattern}", r: 255, g: 255, b: 255 } 
+    # outputs.labels << { x: 130, y: 30.from_top, text: "#{state.baby_pattern}", r: 255, g: 255, b: 255 }
   end
 
   def check_game_over
