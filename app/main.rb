@@ -52,17 +52,45 @@ class Game
     }
     outputs.background_color = [ 0, 0, 0 ]
     # Need to decide a strategy here to use different bitmasks as the game advances
-    # state.block = "110000000000001111111110000000000011111000000000000000000".to_i(2)
-    # state.block = "111010101010101111111110101010101011111010101010101010101".to_i(2)
-    # state.block = "110000000000001111111110000000000011111000000000000000000".to_i(2)
-    # state.block = "110000000000001111111111111111111111111111111111111111111".to_i(2)
     state.masks = [
-    # "110000000000001111111110000000000011111000000000000000000".to_i(2)
-      "110000011111111111111111111111111111111111111111111111111".to_i(2)
+      # easy, bouncing pairs
+      "111000111111111111111110000000000011111000000000000000000".to_i(2),
+      # up to 3 in a row - closer together
+      "110000011111111111111111111111111111111111111111111111111".to_i(2),
+      # up to 4 in a row
+      "111000000000001111111111111111111111111111111111111111111".to_i(2),
+      # up to 5 in a row
+      "110000000000001111111111111111111111111111111111111111111".to_i(2)
     ]
-    # this pattern is pretty good for staggered jumps, looks not more than two clumped together
+    # pro pattern
+    # "111100000000001111111100000000000001110000000000000000001".to_i(2) 
+    # easy, bouncing pairs
+    # "111000111111111111111110000000000011111000000000000000000".to_i(2) 
+    # pairs, sometimes tricky fast
+    # "110111011111111111110000000000000001000000000000000000000".to_i(2)
+    # juggle up to 4 in a row
+    # "111010101010101111111110101010101011111010101010101010101".to_i(2)
+    # difficult, lots of left midldle and middle right movement
+    # "111111000000001111110000000000000001110000000000000000000".to_i(2)
     # results in a lot of 1 - 3 - 1 - 3 extreme left and right manoeuvres
-    # "111111100000001111111110000000000111111100000000000000011".to_i(2)
+    # very fast left right movements needed
+    # "111110000000001111111100000000000001110000000000000000001".to_i(2)
+    # more left right left right, three in a row sorta
+    # "111110000000001111110000000000000001110000000000000000001".to_i(2)
+    # very difficult pattern, needs quick reactions
+    # "111111100000000111111100000000000111111100000000000000011".to_i(2)
+    # very difficult pattern, needs quick reactions
+    # "111100000000001111111100000000000011111000000000000000001".to_i(2)  
+    # difficult pattern, needs quick reactions
+    # "111100000000001111111100000000000011111100000000000000011".to_i(2) 
+    # good juggling, up to three in a row
+    # "111100000000001111111100000000000111111100000000000000011".to_i(2)
+    # also good left right motion
+    # "111111100000000111111110000000000011111100000000000000011".to_i(2)
+    # also good left right motion
+    # "111111100000000111111110000000000111111100000000000000011".to_i(2)
+    # also good left right motion
+    # "111111100000000111111110000000000011111000000000000000011".to_i(2)
     # up to 3 in a row
     # "111110000000001111111111111111111111111111111111111111111".to_i(2)
     # up to 3 in a row - closer together
@@ -217,14 +245,14 @@ class Game
 
   def should_a_baby_jump_now
     # time for some action - if any of these bits are set, do not jump
-    if state.babies_spawned < (state.wave * 2) # the total amount that can spawn is capped per wave
+    if state.babies_spawned < 10.lesser(state.wave * 2) # the total spwned is capped per wave
       if state.bouncing_babies.to_s(2).count("1") < state.baby_in_air_max # max in the air at once
         if (state.bouncing_babies & state.masks[state.baby_pattern]) == 0
           # if there is not already one in the window, put one there
           if ((state.bouncing_babies >> 57) & 1) == 0
             state.bouncing_babies = state.bouncing_babies | (1<<57)
             state.babies_spawned += 1
-            if state.babies_spawned >= (state.wave * 2)
+            if state.babies_spawned >= 10.lesser(state.wave * 2) # [10, (state.wave * 2)].min # b > 10 ? 10 : b
               state.wave_over = true
             end
           end
@@ -459,7 +487,16 @@ class Game
         state.babies_spawned = 0
         state.wave_over = false
         state.baby_in_air_max += 1 if state.baby_in_air_max < 5 # increase the cap by 1, to a max of 5
+        if state.wave == 5
+          # state.masks.delete_at(1)
+          state.masks = state.masks - ["110000011111111111111111111111111111111111111111111111111".to_i(2)]
+        end
         state.wave += 1 if state.wave < 99999 # advance to the next wave
+        if state.baby_pattern < ( state.masks.length - 1 )
+          state.baby_pattern += 1
+        else
+          state.baby_pattern = 0
+        end
         if state.wave % 3 == 0
           state.game_delay -= 1 if state.game_delay > 5
         end
@@ -468,6 +505,7 @@ class Game
     # outputs.labels << { x: 130, y: 30.from_top, text: "#{state.babies_spawned}", r: 255, g: 255, b: 255 }
     # outputs.labels << { x: 130, y: 50.from_top, text: "#{state.wave_over}", r: 255, g: 255, b: 255 }
     # outputs.labels << { x: 130, y: 70.from_top, text: "#{gtk.current_framerate.to_sf}", r: 255, g: 255, b: 255 }
+    outputs.labels << { x: 130, y: 30.from_top, text: "#{state.baby_pattern}", r: 255, g: 255, b: 255 } 
   end
 
   def check_game_over
