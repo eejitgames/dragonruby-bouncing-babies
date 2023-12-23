@@ -36,34 +36,34 @@ class Game
   end
 
   def tick
-    defaults
+    defaults if state.defaults_set.nil?
     scene_manager
   end
 
   def defaults
-    return unless state.defaults_set.nil?
+    # return unless state.defaults_set.nil?
     audio[:game_music] = {
       input: 'sounds/game_music.ogg',  # Filename
       x: 0.0, y: 0.0, z: 0.0,          # Relative position to the listener, x, y, z from -1.0 to 1.0
-      gain: 0.06,                      # Volume (0.0 to 1.0)
+      gain: 0.07,                      # Volume (0.0 to 1.0)
       pitch: 1.0,                      # Pitch of the sound (1.0 = original pitch)
       paused: true,                    # Set to true to pause the sound at the current playback position
       looping: true,                   # Set to true to loop the sound/music until you stop it
     }
     outputs.background_color = [ 0, 0, 0 ]
     state.masks = [
-      "111111111111111111111111111110111111111101111111111111111".to_i(2),
-      "111111111111111111111111111110111111111101111111111111111".to_i(2),
-      "111111111101111111111111111110111111111101111111111111111".to_i(2),
-      "111000111111111111111110000000000011111000000000000000000".to_i(2),
-      "110000000000001111111111111111111111111111111111111111111".to_i(2),
-      "111010101010101111111110101010101011111010101010101010101".to_i(2),
-      "111100000000001111111100000000000111111100000000000000011".to_i(2),
-      "111100000000001111111100000000000001110000000000000000001".to_i(2),
-      "111111100000000111111110000000000011111100000000000000011".to_i(2),
-      "111111000000001111110000000000000001110000000000000000000".to_i(2),
-      "111111100000000111111110000000000011111000000000000000011".to_i(2),
-      "111110000000001111111100000000000001110000000000000000001".to_i(2)
+      "111111111111111111111111111110111111111101111111111111111".to_i(2), # wave 1
+      "111111111111111111111111111110111111111101111111111111111".to_i(2), # wave 2
+      "111111111101111111111111111110111111111101111111111111111".to_i(2), # wave 3
+      "111000111111111111111110000000000011111000000000000000000".to_i(2), # wave 4
+      "110000000000001111111111111111111111111111111111111111111".to_i(2), # wave 5
+      "111010101010101111111111001010101011111010101010101011111".to_i(2), # wave 6
+      "111100000000001111111100000000000111111100000000000000011".to_i(2), # wave 7
+      "111100000000001111111100000000000001110000000000000000001".to_i(2), # wave 8 *
+      "111111100000000111111110000000000011111100000000000000011".to_i(2), # wave 9
+      "111111000000001111110000000000000001110000000000000000000".to_i(2), # wave 10
+      "111111100000000111111110000000000011111000000000000000011".to_i(2), # wave 11
+      "111110000000001111111100000000000001110000000000000000001".to_i(2)  # wave 12 *
     ]
     state.wave = 1
     state.lives = 5
@@ -211,7 +211,7 @@ class Game
 
   def should_a_baby_jump_now
     # time for some action - if any of these bits are set, do not jump
-    if state.babies_spawned < 10.lesser(state.wave * 2) # the total spwned is capped per wave
+    if state.babies_spawned < 10.lesser(state.wave * 2) # the total spawned is capped per wave
       if state.bouncing_babies.to_s(2).count("1") < state.baby_in_air_max # max in the air at once
         if (state.bouncing_babies & state.masks[state.baby_pattern]) == 0
           # if there is not already one in the window, put one there
@@ -272,6 +272,7 @@ class Game
       if inputs.keyboard.key_down.forward_slash
         @show_fps = !@show_fps
       end
+
       if @show_fps
         state.all_primitives.append({ x: 1278, y: 660, text: "#{gtk.current_framerate.to_sf}", size_enum: 3, alignment_enum: 2,
         r: 255, g: 255, b: 255, font: "fonts/IBM_EGA_8x8.ttf"}.label!)
@@ -454,17 +455,17 @@ class Game
         state.babies_spawned = 0
         state.wave_over = false
         state.baby_in_air_max += 1 if state.baby_in_air_max < 5 # increase the cap by 1, to a max of 5
-        if state.wave == 5
+        #if state.wave == 5
           # update this area .. at some stage remove the 'starter' patterns from the mix
           # state.masks.delete_at(1)
-            state.masks = state.masks - ["111111111111111111111111111110111111111101111111111111111".to_i(2)]
-            state.masks = state.masks - ["111111111111111111111111111110111111111101111111111111111".to_i(2)]
-            state.masks = state.masks - ["111111111101111111111111111110111111111101111111111111111".to_i(2)]
-            state.masks = state.masks - ["111000111111111111111110000000000011111000000000000000000".to_i(2)]
-        end
+        #    state.masks = state.masks - ["111111111111111111111111111110111111111101111111111111111".to_i(2)]
+        #    state.masks = state.masks - ["111111111111111111111111111110111111111101111111111111111".to_i(2)]
+        #    state.masks = state.masks - ["111111111101111111111111111110111111111101111111111111111".to_i(2)]
+        #    state.masks = state.masks - ["111000111111111111111110000000000011111000000000000000000".to_i(2)]
+        #end
         state.wave += 1 if state.wave < 99999 # advance to the next wave
         if state.baby_pattern < ( state.masks.length - 1 )
-          state.baby_pattern += 1
+          state.baby_pattern += 1 if state.baby_pattern < 7 # temp cap at 5
         else
           state.baby_pattern = 0
         end
